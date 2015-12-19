@@ -20,7 +20,7 @@ package org.apache.spark.streaming.scheduler
 import scala.collection.mutable.HashSet
 import scala.util.Failure
 
-import org.apache.spark.streaming.Time
+import org.apache.spark.streaming.{Duration, Time}
 import org.apache.spark.util.Utils
 
 /** Class representing a set of Jobs
@@ -29,6 +29,7 @@ import org.apache.spark.util.Utils
 private[streaming]
 case class JobSet(
     time: Time,
+    bathSize: Duration,
     jobs: Seq[Job],
     streamIdToInputInfo: Map[Int, StreamInputInfo] = Map.empty) {
 

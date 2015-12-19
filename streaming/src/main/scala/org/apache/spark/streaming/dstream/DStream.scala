@@ -315,6 +315,20 @@ abstract class DStream[T: ClassTag] (
     dependencies.foreach(_.remember(parentRememberDuration))
   }
 
+  /** Checks whether the 'time' is valid for generating RDD And don't check duration any more */
+  private[streaming] def isTimeValid(time: Time): Boolean = {
+    if (!isInitialized) {
+      throw new SparkException (this + " has not been initialized")
+    } else if (time <= zeroTime ) {
+      logInfo("Time" + time + "is invalid")
+      false
+    } else {
+      logDebug("Time " + time + " is valid")
+      true
+    }
+  }
+
+  /*
   /** Checks whether the 'time' is valid wrt slideDuration for generating RDD */
   private[streaming] def isTimeValid(time: Time): Boolean = {
     if (!isInitialized) {
@@ -328,6 +342,7 @@ abstract class DStream[T: ClassTag] (
       true
     }
   }
+*/
 
   /**
    * Get the RDD corresponding to the given time; either retrieve it from cache

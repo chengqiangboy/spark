@@ -1,3 +1,11 @@
+#Dynamic Streaming
+
+Which is based on Spark Streaming v1.5.1.
+Dynamic Streaming can change the compute unit adaptively according to the rate of input stream.
+The difference of interface between Dynamic Streaming and Spark Streaming is can be ignored.So you
+can use the Dynamic Streaming as same as origin Spark Streaming.
+
+
 # Apache Spark
 
 Spark is a fast and general cluster computing system for Big Data. It provides

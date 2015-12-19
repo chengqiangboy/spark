@@ -20,13 +20,15 @@ package org.apache.spark.streaming.scheduler
 import scala.util.{Failure, Success, Try}
 
 import org.apache.spark.{SparkEnv, Logging}
-import org.apache.spark.streaming.{Checkpoint, CheckpointWriter, Time}
+import org.apache.spark.streaming.{Duration, Checkpoint, CheckpointWriter, Time}
 import org.apache.spark.streaming.util.RecurringTimer
 import org.apache.spark.util.{Utils, Clock, EventLoop, ManualClock}
+import org.apache.spark.streaming.scheduler.dynamic.{JobSliceStrategy, DyRecurringTimer}
 
 /** Event classes for JobGenerator */
 private[scheduler] sealed trait JobGeneratorEvent
-private[scheduler] case class GenerateJobs(time: Time) extends JobGeneratorEvent
+private[scheduler] case class GenerateJobs
+(time: Time, batchSize: Duration) extends JobGeneratorEvent
 private[scheduler] case class ClearMetadata(time: Time) extends JobGeneratorEvent
 private[scheduler] case class DoCheckpoint(
     time: Time, clearCheckpointDataLater: Boolean) extends JobGeneratorEvent
@@ -55,8 +57,10 @@ class JobGenerator(jobScheduler: JobScheduler) extends Logging {
     }
   }
 
-  private val timer = new RecurringTimer(clock, ssc.graph.batchDuration.milliseconds,
-    longTime => eventLoop.post(GenerateJobs(new Time(longTime))), "JobGenerator")
+  private val timer = new DyRecurringTimer(clock, ssc.graph.batchDuration.milliseconds,
+    (longTime, batchSize) => eventLoop.post(
+      GenerateJobs(new Time(longTime), new Duration(batchSize))), "JobGenerator",
+    new JobSliceStrategy(jobScheduler.jobSetHistory))
 
   // This is marked lazy so that this is initialized after checkpoint duration has been set
   // in the context and the generator has been started.
@@ -178,7 +182,7 @@ class JobGenerator(jobScheduler: JobScheduler) extends Logging {
   private def processEvent(event: JobGeneratorEvent) {
     logDebug("Got event " + event)
     event match {
-      case GenerateJobs(time) => generateJobs(time)
+      case GenerateJobs(time, batchSize) => generateJobs(time, batchSize)
       case ClearMetadata(time) => clearMetadata(time)
       case DoCheckpoint(time, clearCheckpointDataLater) =>
         doCheckpoint(time, clearCheckpointDataLater)
@@ -228,7 +232,7 @@ class JobGenerator(jobScheduler: JobScheduler) extends Logging {
       // added but not allocated, are dangling in the queue after recovering, we have to allocate
       // those blocks to the next batch, which is the batch they were supposed to go.
       jobScheduler.receiverTracker.allocateBlocksToBatch(time) // allocate received blocks to batch
-      jobScheduler.submitJobSet(JobSet(time, graph.generateJobs(time)))
+      jobScheduler.submitJobSet(JobSet(time, batchDuration, graph.generateJobs(time)))
     }
 
     // Restart the timer
@@ -237,7 +241,7 @@ class JobGenerator(jobScheduler: JobScheduler) extends Logging {
   }
 
   /** Generate jobs and perform checkpoint for the given `time`.  */
-  private def generateJobs(time: Time) {
+  private def generateJobs(time: Time, batchSize: Duration) {
     // Set the SparkEnv in this thread, so that job generation code can access the environment
     // Example: BlockRDDs are created in this thread, and it needs to access BlockManager
     // Update: This is probably redundant after threadlocal stuff in SparkEnv has been removed.
@@ -248,7 +252,7 @@ class JobGenerator(jobScheduler: JobScheduler) extends Logging {
     } match {
       case Success(jobs) =>
         val streamIdToInputInfos = jobScheduler.inputInfoTracker.getInfo(time)
-        jobScheduler.submitJobSet(JobSet(time, jobs, streamIdToInputInfos))
+        jobScheduler.submitJobSet(JobSet(time, batchSize, jobs, streamIdToInputInfos))
       case Failure(e) =>
         jobScheduler.reportError("Error generating jobs for time " + time, e)
     }

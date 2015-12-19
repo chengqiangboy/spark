@@ -19,6 +19,8 @@ package org.apache.spark.streaming.scheduler
 
 import java.util.concurrent.{ConcurrentHashMap, TimeUnit}
 
+import org.apache.spark.streaming.scheduler.dynamic.JobSetHistory
+
 import scala.collection.JavaConversions._
 import scala.util.{Failure, Success}
 
@@ -28,6 +30,7 @@ import org.apache.spark.streaming._
 import org.apache.spark.streaming.ui.UIUtils
 import org.apache.spark.util.{EventLoop, ThreadUtils}
 
+import org.apache.spark.streaming.scheduler.dynamic
 
 private[scheduler] sealed trait JobSchedulerEvent
 private[scheduler] case class JobStarted(job: Job) extends JobSchedulerEvent
@@ -58,6 +61,8 @@ class JobScheduler(val ssc: StreamingContext) extends Logging {
   var inputInfoTracker: InputInfoTracker = null
 
   private var eventLoop: EventLoop[JobSchedulerEvent] = null
+
+  var jobSetHistory = new JobSetHistory(this)
 
   def start(): Unit = synchronized {
     if (eventLoop != null) return // scheduler has already been started
@@ -177,6 +182,7 @@ class JobScheduler(val ssc: StreamingContext) extends Logging {
         jobSet.processingDelay / 1000.0
       ))
       listenerBus.post(StreamingListenerBatchCompleted(jobSet.toBatchInfo))
+      jobSetHistory.addJobHistory((jobSet.bathSize.milliseconds, jobSet.processingDelay))
     }
     job.result match {
       case Failure(e) =>
