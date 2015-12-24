@@ -17,7 +17,7 @@ import scala.collection.mutable
 private [streaming]
 class JobSetHistory(jobScheduler: JobScheduler, totalNum: Int) extends Logging {
   private var used = 0
-  private val head = new mutable.ListBuffer[(Long, Long)]()
+  val head = new mutable.ListBuffer[(Long, Long)]()
 
   def this(jobScheduler: JobScheduler) = {
     this(jobScheduler, 10)

@@ -57,10 +57,13 @@ class JobGenerator(jobScheduler: JobScheduler) extends Logging {
     }
   }
 
+  private val jobSliceStrategy = new JobSliceStrategy(
+    jobScheduler.jobSetHistory, jobScheduler.ssc.graph.batchDuration)
+
   private val timer = new DyRecurringTimer(clock, ssc.graph.batchDuration.milliseconds,
     (longTime, batchSize) => eventLoop.post(
-      GenerateJobs(new Time(longTime), new Duration(batchSize))), "JobGenerator",
-    new JobSliceStrategy(jobScheduler.jobSetHistory))
+      GenerateJobs(new Time(longTime), new Duration(batchSize))), "JobGenerator", jobSliceStrategy)
+
 
   // This is marked lazy so that this is initialized after checkpoint duration has been set
   // in the context and the generator has been started.

@@ -50,6 +50,7 @@ class JobScheduler(val ssc: StreamingContext) extends Logging {
   private val numConcurrentJobs = ssc.conf.getInt("spark.streaming.concurrentJobs", 1)
   private val jobExecutor =
     ThreadUtils.newDaemonFixedThreadPool(numConcurrentJobs, "streaming-job-executor")
+  var jobSetHistory = new JobSetHistory(this)
   private val jobGenerator = new JobGenerator(this)
   val clock = jobGenerator.clock
   val listenerBus = new StreamingListenerBus()
@@ -62,7 +63,6 @@ class JobScheduler(val ssc: StreamingContext) extends Logging {
 
   private var eventLoop: EventLoop[JobSchedulerEvent] = null
 
-  var jobSetHistory = new JobSetHistory(this)
 
   def start(): Unit = synchronized {
     if (eventLoop != null) return // scheduler has already been started
