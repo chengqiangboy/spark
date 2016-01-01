@@ -40,7 +40,8 @@ class JobSliceStrategy(jobSetHistory: JobSetHistory, maxDuration: Duration) exte
 
   private def fixedPoint(r: Float, p: Float): Long = {
     if (jobSetHistory.head.isEmpty) {
-      200 * (maxBatchSize/3/200 + 1)
+     // 200 * (maxBatchSize/3/200 + 1)
+      maxBatchSize
     }
     else if (jobSetHistory.head.size > 1) {
       val size = jobSetHistory.head.size

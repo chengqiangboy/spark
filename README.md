@@ -1,4 +1,4 @@
-#Dynamic Streaming
+# Dynamic Streaming
 
 Which is based on Spark Streaming v1.5.1.
 Dynamic Streaming can change the compute unit adaptively according to the rate of input stream.
