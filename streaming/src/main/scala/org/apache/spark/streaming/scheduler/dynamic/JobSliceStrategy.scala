@@ -14,14 +14,15 @@ import scala.util.Random
  */
 
 private[streaming]
-class JobSliceStrategy(jobSetHistory: JobSetHistory, maxDuration: Duration) extends Logging{
+class JobSliceStrategy(jobSetHistory: JobSetHistory, maxDuration: Duration, miniBatch: Int)
+  extends Logging{
   private  val maxBatchSize = maxDuration.milliseconds
 
   private def random(): Long = {
     var next = JobSliceStrategy.rd.nextInt()
     while( next <=0 )
       next = JobSliceStrategy.rd.nextInt()
-    ((next % maxBatchSize)/200 + 1)*200
+    ((next % maxBatchSize)/miniBatch + 1) * miniBatch
   }
 
   /* The batch size computed by slowStart is may be larger than maxBatchSize */
@@ -31,16 +32,15 @@ class JobSliceStrategy(jobSetHistory: JobSetHistory, maxDuration: Duration) exte
       jobSetHistory.head(size-1)._1 * 2
     }
     else if (size == 0) {
-      200L
+      miniBatch.toLong
     }
     else {
-      jobSetHistory.head(size-1)._1 + 200
+      jobSetHistory.head(size-1)._1 + miniBatch
     }
   }
 
   private def fixedPoint(r: Float, p: Float): Long = {
     if (jobSetHistory.head.isEmpty) {
-     // 200 * (maxBatchSize/3/200 + 1)
       maxBatchSize
     }
     else if (jobSetHistory.head.size > 1) {
@@ -51,14 +51,14 @@ class JobSliceStrategy(jobSetHistory: JobSetHistory, maxDuration: Duration) exte
       val xLarge = if (first._2 > second._1) first else second
 
       if ( xLarge._2 * xSmall._1 > xLarge._1 * xSmall._2 && second._2 > p*second._1) {
-        (((1-r) * xSmall._1).toInt % maxBatchSize / 200 + 1 )*200
+        (((1-r) * xSmall._1).toInt % maxBatchSize / miniBatch + 1 ) * miniBatch
       }
       else {
-        ((second._1/p).toInt % maxBatchSize / 200 + 1 )*200
+        ((second._1/p).toInt % maxBatchSize / miniBatch + 1 ) * miniBatch
       }
     }
    else {
-      200 * (maxBatchSize/3/200*2 + 1)
+      miniBatch * (maxBatchSize/3/miniBatch *2 + 1)
     }
   }
 
