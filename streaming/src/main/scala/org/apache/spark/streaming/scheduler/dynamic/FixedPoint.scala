@@ -35,7 +35,8 @@ private[streaming] class FixedPoint(
       else {
         ret = Math.ceil(second._2/p/miniBatch).toLong * miniBatch
       }
-      logError(s"first_x: ${first._1} firest_y: ${first._2} second_x: ${second._1} second_y: ${second._2} next: $ret")
+      logError(s"first_x: ${first._1} firest_y: ${first._2} second_x: ${second._1} " +
+        s"second_y: ${second._2} next: $ret")
       ret = Math.min(maxBatchSize, ret).max(miniBatch)
       ret
     }
