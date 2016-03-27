@@ -7,7 +7,7 @@ package org.apache.spark.streaming.scheduler.dynamic
 import org.apache.spark.Logging
 import org.apache.spark.streaming.scheduler.JobScheduler
 
-import scala.collection.mutable
+import java.util.concurrent.CopyOnWriteArrayList
 
 
 /**
@@ -17,25 +17,30 @@ import scala.collection.mutable
 private [streaming]
 class JobSetHistory(jobScheduler: JobScheduler, totalNum: Int) extends Logging {
   private var used = 0
-  val head = new mutable.ListBuffer[(Long, Long)]()
+
+  /* _1: batchSize, _2: processingDelay, _3: scheduleDelay */
+  var head = new CopyOnWriteArrayList[(Long, Long, Long)]()
 
   def this(jobScheduler: JobScheduler) = {
     this(jobScheduler, 10)
   }
 
-  def addJobHistory(tuple: (Long, Long)): Unit = {
+  def addJobHistory(tuple: (Long, Long, Long)): Unit = {
+    /*
     if (head.isEmpty){
-      head += tuple
+      head.add(tuple)
       used = 1
     }
     else if (used < totalNum){
       used = used + 1
-      head += tuple
+      head.add(tuple)
     }
     else {
-      head.trimStart(1)
-      head += tuple
+      head.remove(0)
+      head.add(tuple)
     }
+    */
 
+    head.add(tuple)
   }
 }

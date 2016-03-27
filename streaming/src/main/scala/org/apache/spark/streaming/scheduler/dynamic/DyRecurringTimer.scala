@@ -97,9 +97,9 @@ class DyRecurringTimer
 
   private def triggerActionForNextInterval(): Unit = {
     clock.waitTillTime(nextTime)
+    newBatch = sliceStrategy.nextBatchSize
     callback(nextTime, newBatch)
     prevTime = nextTime
-    newBatch = sliceStrategy.nextBatchSize
     nextTime += newBatch
     logDebug("Callback for " + name + " called at time " + prevTime)
   }

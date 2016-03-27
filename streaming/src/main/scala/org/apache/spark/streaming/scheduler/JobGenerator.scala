@@ -57,8 +57,8 @@ class JobGenerator(jobScheduler: JobScheduler) extends Logging {
     }
   }
 
-  private val jobSliceStrategy = new JobSliceStrategy(
-    jobScheduler.jobSetHistory, jobScheduler.ssc.graph.batchDuration, 100)
+  private val jobSliceStrategy = JobSliceStrategy.creat(conf,
+    jobScheduler.jobSetHistory, jobScheduler.ssc.graph.batchDuration.milliseconds, 100L)
 
   private val timer = new DyRecurringTimer(clock, ssc.graph.batchDuration.milliseconds,
     (longTime, batchSize) => eventLoop.post(

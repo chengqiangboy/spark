@@ -177,12 +177,13 @@ class JobScheduler(val ssc: StreamingContext) extends Logging {
     if (jobSet.hasCompleted) {
       jobSets.remove(jobSet.time)
       jobGenerator.onBatchCompletion(jobSet.time)
-      logInfo("Total delay: %.3f s for time %s (execution: %.3f s)".format(
+      logError("Total delay: %.3f s for time %s (execution: %.3f s)".format(
         jobSet.totalDelay / 1000.0, jobSet.time.toString,
         jobSet.processingDelay / 1000.0
       ))
       listenerBus.post(StreamingListenerBatchCompleted(jobSet.toBatchInfo))
-      jobSetHistory.addJobHistory((jobSet.bathSize.milliseconds, jobSet.processingDelay))
+      jobSetHistory.addJobHistory((jobSet.bathSize.milliseconds, jobSet.processingDelay,
+        jobSet.toBatchInfo.schedulingDelay.get))
     }
     job.result match {
       case Failure(e) =>
