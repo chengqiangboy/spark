@@ -17,6 +17,7 @@ import java.util.concurrent.CopyOnWriteArrayList
 private [streaming]
 class JobSetHistory(jobScheduler: JobScheduler, totalNum: Int) extends Logging {
   private var used = 0
+  private var id = 0L
 
   /* _1: batchSize, _2: processingDelay, _3: scheduleDelay */
   var head = new CopyOnWriteArrayList[(Long, Long, Long)]()
@@ -26,7 +27,7 @@ class JobSetHistory(jobScheduler: JobScheduler, totalNum: Int) extends Logging {
   }
 
   def addJobHistory(tuple: (Long, Long, Long)): Unit = {
-    /*
+
     if (head.isEmpty){
       head.add(tuple)
       used = 1
@@ -39,8 +40,12 @@ class JobSetHistory(jobScheduler: JobScheduler, totalNum: Int) extends Logging {
       head.remove(0)
       head.add(tuple)
     }
-    */
 
     head.add(tuple)
+    id = id + 1
+  }
+
+  def getLastJobId(): Long = {
+    id
   }
 }

@@ -35,7 +35,7 @@ private [streaming] object JobSliceStrategy {
         val p = conf.getDouble("spark.streaming.elasticwindow.pid.p", 1)
         val i = conf.getDouble("spark.streaming.elasticwindow.pid.i", 0.2)
         val d = conf.getDouble("spark.streaming.elasticwindow.pid.d", 0)
-        val relax = conf.getDouble("spark.streaming.elasticwindow.pid.d", 0.7)
+        val relax = conf.getDouble("spark.streaming.elasticwindow.pid.r", 0.7)
         new PID(p, i, d, relax, jobSetHistpry, maxBatchSize, minBatch)
 
       case strategy =>
